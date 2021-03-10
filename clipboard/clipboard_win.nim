@@ -86,7 +86,7 @@ proc getClipboardFormatName(fmt: UINT): string =
   # According to https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-registerclipboardformata
   # Registered clipboard formats are identified by values in the range 0xC000 through 0xFFFF.
   if fmt < 0xC000:
-    result = "_H:" & toHex(fmt, 4)
+    result = "_H:" & toHex(fmt.int, 4)
   else:
     var data: array[512, char]
     let sz = getClipboardFormatName(fmt, cstring(addr data[0]), sizeof(data).cint)
