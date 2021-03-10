@@ -19,11 +19,3 @@ elif defined(linux) and not defined(android):
 
 else:
   proc clipboardWithName*(name: string): Clipboard = result.new()
-
-
-when isMainModule:
-  # Some tests...
-  let pb = clipboardWithName(PboardGeneral)
-  pb.writeString("Hello world!")
-  let s = pb.readString()
-  echo s
