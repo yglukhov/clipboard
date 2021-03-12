@@ -32,6 +32,11 @@ proc getAtomName(d: PDisplay, a: Atom): string =
   result = $s
   discard XFree(s)
 
+proc getAtomNames(pb: X11Clipboard, atoms: openarray[Atom], output: var HashSet[string]) =
+  for a in atoms:
+    if a != pb.targetsAtom:
+      output.incl(getAtomName(pb.display, a))
+
 proc getXAvailableFormats(pb: X11Clipboard): HashSet[string] =
   let display = pb.display
   let r = XConvertSelection(display, pb.clipboardAtom, pb.targetsAtom, pb.myPropertyName, pb.window, CurrentTime)
@@ -49,9 +54,7 @@ proc getXAvailableFormats(pb: X11Clipboard): HashSet[string] =
       maxXPropLen, false.XBool, XA_ATOM, addr selType,
       addr selFormat, addr nitems, addr overflow, cast[PPcuchar](addr src)) == Success:
     if selType == XA_ATOM:
-      for a in toOpenArray(cast[ptr UncheckedArray[Atom]](src), 0, nitems.int - 1):
-        if a != pb.targetsAtom:
-          result.incl(getAtomName(pb.display, a))
+      pb.getAtomNames(toOpenArray(cast[ptr UncheckedArray[Atom]](src), 0, nitems.int - 1), result)
     discard XFree(src)
   discard XDeleteProperty(display, pb.window, pb.myPropertyName)
 
