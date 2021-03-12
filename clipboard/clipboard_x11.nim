@@ -49,7 +49,7 @@ proc getXAvailableFormats(pb: X11Clipboard): HashSet[string] =
       maxXPropLen, false.XBool, XA_ATOM, addr selType,
       addr selFormat, addr nitems, addr overflow, cast[PPcuchar](addr src)) == Success:
     if selType == XA_ATOM:
-      for a in toOpenArray(cast[ptr UncheckedArray[Atom]](src), 0, nitems.int - 1):
+      for a in @(toOpenArray(cast[ptr UncheckedArray[Atom]](src), 0, nitems.int - 1)):
         if a != pb.targetsAtom:
           result.incl(getAtomName(pb.display, a))
     discard XFree(src)
