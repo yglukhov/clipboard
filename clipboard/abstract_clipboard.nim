@@ -12,9 +12,9 @@ import ./type_conversions
 
 type
   Clipboard* {.inheritable.} = ref object
-    writeImpl*: proc(pb: Clipboard, dataType: string, data: seq[byte]) {.nimcall.}
-    readImpl*: proc(pb: Clipboard, dataType: string, output: var seq[byte]): bool {.nimcall.}
-    availableFormatsImpl*: proc(pb: Clipboard): seq[string] {.nimcall.}
+    writeImpl*: proc(pb: Clipboard, dataType: string, data: seq[byte]) {.nimcall, gcsafe.}
+    readImpl*: proc(pb: Clipboard, dataType: string, output: var seq[byte]): bool {.nimcall, gcsafe.}
+    availableFormatsImpl*: proc(pb: Clipboard): seq[string] {.nimcall, gcsafe.}
 
 const
   CboardGeneral* = "__CboardGeneral"
@@ -47,11 +47,11 @@ proc convertData*(fromType, toType: string, data: seq[byte], output: var seq[byt
     {.gcsafe.}:
       result = typeConverter.convertData(fromType, toType, data, output)
 
-proc writeData*(pb: Clipboard, dataType: string, data: seq[byte]) {.inline.} =
+proc writeData*(pb: Clipboard, dataType: string, data: seq[byte]) {.inline, gcsafe.} =
   assert(not pb.writeImpl.isNil)
   pb.writeImpl(pb, dataType, data)
 
-proc readData*(pb: Clipboard, dataType: string, output: var seq[byte]): bool {.inline.} =
+proc readData*(pb: Clipboard, dataType: string, output: var seq[byte]): bool {.inline, gcsafe.} =
   assert(not pb.readImpl.isNil)
   pb.readImpl(pb, dataType, output)
 

@@ -30,7 +30,7 @@ else:
     import jsbind/emscripten
     const emCode = webCode.format("UTF8ToString($0)")
 
-proc pbWrite(p: Pasteboard, pi_ar: varargs[PasteboardItem]) =
+proc pbWrite(p: Pasteboard, pi_ar: varargs[PasteboardItem]) {.gcsafe.} =
     let item = pi_ar[0]
     if item.kind == PboardKindString:
         when defined(js):
@@ -39,7 +39,7 @@ proc pbWrite(p: Pasteboard, pi_ar: varargs[PasteboardItem]) =
         else:
             discard EM_ASM_INT(emCode, cstring(item.data))
 
-proc pbRead(p: Pasteboard, kind: string): PasteboardItem = discard
+proc pbRead(p: Pasteboard, kind: string): PasteboardItem {.gcsafe.} = discard
 
 proc pasteboardWithName*(name: string): Pasteboard =
     var res: WebPasteboard
