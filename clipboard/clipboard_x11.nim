@@ -18,7 +18,7 @@ type X11Clipboard = ref object of Clipboard
 
 const maxXPropLen = 1024 * 1024 div 4 # Max length in 32-bit multiples
 
-proc pbWrite(pb: Clipboard, dataType: string, data: seq[byte]) =
+proc pbWrite(pb: Clipboard, dataType: string, data: seq[byte]) {.gcsafe.} =
   let pb = X11Clipboard(pb)
   pb.dataType = dataType
   pb.data = data
@@ -76,7 +76,7 @@ proc bestFormat(origFormat: string, availableFormats: HashSet[string]): string =
         result = f
         break
 
-proc pbRead(pb: Clipboard, dataType: string, output: var seq[byte]): bool =
+proc pbRead(pb: Clipboard, dataType: string, output: var seq[byte]): bool {.gcsafe.} =
   let pb = X11Clipboard(pb)
   let display = pb.display
   if pb.display.isNil: return

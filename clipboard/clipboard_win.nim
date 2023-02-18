@@ -69,7 +69,7 @@ proc copyDataToClipboard(dataType: string, data: seq[byte]) =
     if glmem != 0:
       discard globalFree(glmem)
 
-proc pbWrite(pb: Clipboard, dataType: string, data: seq[byte])=
+proc pbWrite(pb: Clipboard, dataType: string, data: seq[byte]) {.gcsafe.} =
   if *openClipboard() and *emptyClipboard():
     copyDataToClipboard(dataType, data)
     var buf: seq[byte]
@@ -121,7 +121,7 @@ proc bestFormat(origFormat: string, availableFormats: HashSet[string]): string =
         result = f
         break
 
-proc pbRead(pb: Clipboard, dataType: string, output: var seq[byte]): bool =
+proc pbRead(pb: Clipboard, dataType: string, output: var seq[byte]): bool {.gcsafe.} =
   if *openClipboard():
     let requestDataType = bestFormat(dataType, getClipboardAvailableformats())
     if requestDataType.len != 0:

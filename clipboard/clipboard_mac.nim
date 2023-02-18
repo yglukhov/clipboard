@@ -64,7 +64,7 @@ proc setDataForType(pi: NSPasteboardItem, data: seq[byte], dataType: string) =
   let nsdata = NSData.withBytes(data)
   discard pi.setDataForType(nsdata, utiDataType.toNSString())
 
-proc pbWrite(pb: Clipboard, dataType: string, data: seq[byte]) =
+proc pbWrite(pb: Clipboard, dataType: string, data: seq[byte]) {.gcsafe.} =
   let pb = MacClipboard(pb)
   pb.p.clearContents()
   let npi = NSPasteboardItem.alloc().init()
@@ -111,7 +111,7 @@ proc bestFormat(origFormat: string, availableFormats: HashSet[string]): string =
         result = f
         break
 
-proc pbRead(pb: Clipboard, dataType: string, output: var seq[byte]): bool =
+proc pbRead(pb: Clipboard, dataType: string, output: var seq[byte]): bool {.gcsafe.} =
   let pb = MacClipboard(pb)
   let pi = pb.getFirstItem()
   if not pi.isNil:
