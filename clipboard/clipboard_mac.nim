@@ -77,21 +77,21 @@ proc pbWrite(pb: Clipboard, dataType: string, data: seq[byte]) {.gcsafe.} =
   pb.p.writeObjects(arrayWithObjects(npi))
   npi.release()
 
-proc getAvailableFormats(pi: NSPasteboardItem): HashSet[string] =
+proc getAvailableFormats(pi: NSPasteboardItem, o: var HashSet[string]) {.inline.} =
   let typs = pi.`types`()
   if not typs.isNil:
     for t in typs:
-      result.incl(fromUti($t))
+      o.incl(fromUti($t))
 
 proc getFirstItem(pb: MacClipboard): NSPasteboardItem =
   let its = pb.p.pasteboardItems
   if not its.isNil and its.len != 0:
     result = its[0]
 
-proc getAvailableFormats(pb: MacClipboard): HashSet[string] =
+proc getAvailableFormats(pb: MacClipboard, o: var HashSet[string]) {.inline.} =
   let pi = pb.getFirstItem()
   if not pi.isNil:
-    result = getAvailableFormats(pi)
+    getAvailableFormats(pi, o)
 
 proc bestFormat(origFormat: string, availableFormats: HashSet[string]): string =
   if origFormat in availableFormats:
@@ -125,16 +125,9 @@ proc pbRead(pb: Clipboard, dataType: string, output: var seq[byte]): bool {.gcsa
           d.getBytes(addr buf[0], sz)
         result = convertData(requestDataType, dataType, buf, output)
 
-proc pbAvailableFormats(pb: Clipboard): seq[string] =
+proc pbAvailableFormats(pb: Clipboard, o: var HashSet[string]) =
   let pb = MacClipboard(pb)
-  let fmts = pb.getAvailableFormats()
-  var ownFormats = initHashSet[string]()
-  for f in fmts:
-    let conv = conversionsFromType(f)
-    ownFormats.incl(conv.toHashSet())
-  ownFormats.incl(fmts)
-  for f in ownFormats:
-    result.add(f)
+  pb.getAvailableFormats(o)
 
 proc clipboardWithName*(name: string): Clipboard =
   var res: MacClipboard

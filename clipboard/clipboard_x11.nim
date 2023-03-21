@@ -37,7 +37,7 @@ proc getAtomNames(pb: X11Clipboard, atoms: openarray[Atom], output: var HashSet[
     if a != pb.targetsAtom:
       output.incl(getAtomName(pb.display, a))
 
-proc getXAvailableFormats(pb: X11Clipboard): HashSet[string] =
+proc getXAvailableFormats(pb: X11Clipboard, o: var HashSet[string]) =
   let display = pb.display
   let r = XConvertSelection(display, pb.clipboardAtom, pb.targetsAtom, pb.myPropertyName, pb.window, CurrentTime)
 
@@ -54,7 +54,7 @@ proc getXAvailableFormats(pb: X11Clipboard): HashSet[string] =
       maxXPropLen, false.XBool, XA_ATOM, addr selType,
       addr selFormat, addr nitems, addr overflow, cast[PPcuchar](addr src)) == Success:
     if selType == XA_ATOM:
-      pb.getAtomNames(toOpenArray(cast[ptr UncheckedArray[Atom]](src), 0, nitems.int - 1), result)
+      pb.getAtomNames(toOpenArray(cast[ptr UncheckedArray[Atom]](src), 0, nitems.int - 1), o)
     discard XFree(src)
   discard XDeleteProperty(display, pb.window, pb.myPropertyName)
 
@@ -89,7 +89,9 @@ proc pbRead(pb: Clipboard, dataType: string, output: var seq[byte]): bool {.gcsa
       result = convertData(pb.dataType, dataType, pb.data, output)
     return
 
-  let requestDataType = bestFormat(dataType, pb.getXAvailableFormats())
+  var fmts: HashSet[string]
+  pb.getXAvailableFormats(fmts)
+  let requestDataType = bestFormat(dataType, fmts)
   if requestDataType.len == 0: return
 
   let format = XInternAtom(display, requestDataType, 0)
@@ -184,25 +186,15 @@ proc onSocket(pb: X11Clipboard): bool =
     discard XNextEvent(display, addr ev)
     onXEvent(pb, addr ev)
 
-proc pbFormats(pb: Clipboard): seq[string] =
+proc pbFormats(pb: Clipboard, o: var HashSet[string]) =
   let pb = X11Clipboard(pb)
   let display = pb.display
   if pb.display.isNil: return
 
   if XGetSelectionOwner(display, pb.clipboardAtom) == pb.window:
-    result = conversionsFromType(pb.dataType)
-    result.add(pb.dataType)
-    return
-
-  let fmts = pb.getXAvailableFormats()
-  var ownFormats = initHashSet[string]()
-  for f in fmts:
-    let conv = conversionsFromType(f)
-    ownFormats.incl(conv.toHashSet())
-
-  ownFormats.incl(fmts)
-  for f in ownFormats:
-    result.add(f)
+    o.incl(pb.dataType)
+  else:
+    pb.getXAvailableFormats(o)
 
 proc registerSocket(pb: X11Clipboard) =
   let fd = XConnectionNumber(pb.display).AsyncFd

@@ -94,14 +94,14 @@ proc getClipboardFormatName(fmt: UINT): string =
       result = newString(sz)
       copyMem(addr result[0], addr data[0], sz)
 
-proc getClipboardAvailableFormats(): HashSet[string] =
+proc getClipboardAvailableFormats(o: var HashSet[string]) =
   var fmt = 0.UINT
   while true:
     fmt = enumClipboardFormats(fmt)
     if fmt == 0: break
     let n = getClipboardFormatName(fmt)
     if n.len != 0:
-      result.incl(n)
+      o.incl(n)
 
 proc bestFormat(origFormat: string, availableFormats: HashSet[string]): string =
   if origFormat in availableFormats:
@@ -123,7 +123,9 @@ proc bestFormat(origFormat: string, availableFormats: HashSet[string]): string =
 
 proc pbRead(pb: Clipboard, dataType: string, output: var seq[byte]): bool {.gcsafe.} =
   if *openClipboard():
-    let requestDataType = bestFormat(dataType, getClipboardAvailableformats())
+    var fmts: HashSet[string]
+    getClipboardAvailableFormats(fmts)
+    let requestDataType = bestFormat(dataType, fmts)
     if requestDataType.len != 0:
       let fKind = getClipboardFormatByName(requestDataType)
       let h = getClipboardData(fKind)
@@ -146,17 +148,10 @@ proc pbRead(pb: Clipboard, dataType: string, output: var seq[byte]): bool {.gcsa
   else:
     error()
 
-proc pbAvailableFormats(pb: Clipboard): seq[string] =
+proc pbAvailableFormats(pb: Clipboard, o: var HashSet[string]) =
   if *openClipboard():
-    let fmts = getClipboardAvailableFormats()
+    getClipboardAvailableFormats(o)
     discard closeClipboard()
-    var ownFormats = initHashSet[string]()
-    for f in fmts:
-      let conv = conversionsFromType(f)
-      ownFormats.incl(conv.toHashSet())
-    ownFormats.incl(fmts)
-    for f in ownFormats:
-      result.add(f)
 
 proc clipboardWithName*(name: string): Clipboard =
   var res = new(WindowsClipboard)

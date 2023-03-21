@@ -9,12 +9,13 @@
 ##   echo "Got string: ", myString
 
 import ./type_conversions
+import sets
 
 type
   Clipboard* {.inheritable.} = ref object
     writeImpl*: proc(pb: Clipboard, dataType: string, data: seq[byte]) {.nimcall, gcsafe.}
     readImpl*: proc(pb: Clipboard, dataType: string, output: var seq[byte]): bool {.nimcall, gcsafe.}
-    availableFormatsImpl*: proc(pb: Clipboard): seq[string] {.nimcall, gcsafe.}
+    availableFormatsImpl*: proc(pb: Clipboard, h: var HashSet[string]) {.nimcall, gcsafe.}
 
 const
   CboardGeneral* = "__CboardGeneral"
@@ -61,7 +62,15 @@ proc readData*(pb: Clipboard, dataType: string): seq[byte] =
 
 proc availableFormats*(pb: Clipboard): seq[string] =
   assert(not pb.availableFormatsImpl.isNil)
-  pb.availableFormatsImpl(pb)
+  var fmts: HashSet[string]
+  pb.availableFormatsImpl(pb, fmts)
+  var ownFormats = initHashSet[string]()
+  for f in fmts:
+    let conv = conversionsFromType(f)
+    ownFormats.incl(conv.toHashSet())
+  ownFormats.incl(fmts)
+  for f in ownFormats:
+    result.add(f)
 
 proc writeString*(pb: Clipboard, s: string) =
   pb.writeData("text/plain", cast[seq[byte]](s))
