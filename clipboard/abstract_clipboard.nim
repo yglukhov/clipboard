@@ -53,7 +53,11 @@ proc writeData*(pb: Clipboard, dataType: string, data: seq[byte]) {.inline, gcsa
 
 proc readData*(pb: Clipboard, dataType: string, output: var seq[byte]): bool {.inline, gcsafe.} =
   assert(not pb.readImpl.isNil)
-  pb.readImpl(pb, dataType, output)
+  result = pb.readImpl(pb, dataType, output)
+
+proc readData*(pb: Clipboard, dataType: string): seq[byte] =
+  if not pb.readData(dataType, result):
+    result = @[]
 
 proc availableFormats*(pb: Clipboard): seq[string] =
   assert(not pb.availableFormatsImpl.isNil)
@@ -65,7 +69,12 @@ proc writeString*(pb: Clipboard, s: string) =
 proc readString*(pb: Clipboard, output: var string): bool =
   var d: seq[byte]
   result = pb.readData("text/plain", d)
-  let sz = d.len
-  output.setLen(sz)
-  if sz != 0:
-    copyMem(addr output[0], addr d[0], sz)
+  if result:
+    let sz = d.len
+    output.setLen(sz)
+    if sz != 0:
+      copyMem(addr output[0], addr d[0], sz)
+
+proc readString*(pb: Clipboard): string =
+  if not pb.readString(result):
+    result = ""
