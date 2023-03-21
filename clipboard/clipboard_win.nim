@@ -194,10 +194,14 @@ proc wideToUTF8(fromType, toType: string, data: seq[byte]): seq[byte] =
     if sz > 0:
       let buf = globalLock(h)
       if buf != nil:
-        let numChars = (sz div 2).cint
-        let usz = wideCharToMultiByte(cp, 0, buf, numChars, nil, 0) + 1
-        result.setLen(usz)
-        discard wideCharToMultiByte(cp, 0, buf, numChars, addr result[0], usz)
+        var numChars = (sz div 2).cint
+        if cast[ptr UncheckedArray[uint16]](buf)[numChars - 1] == 0:
+          # String ends with trailing zero. Omit it.
+          dec numChars
+        if numChars > 0:
+          let usz = wideCharToMultiByte(cp, 0, buf, numChars, nil, 0)
+          result.setLen(usz)
+          discard wideCharToMultiByte(cp, 0, buf, numChars, addr result[0], usz)
         discard globalUnlock(h)
 
 proc utf8ToWide(fromType, toType: string, data: seq[byte]): seq[byte] =
