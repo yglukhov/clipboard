@@ -206,7 +206,8 @@ proc newX11Clipboard(): X11Clipboard =
   let r = X11Clipboard()
   r.display = XOpenDisplay(nil)
   if not r.display.isNil:
-    r.window = XCreateSimpleWindow(r.display, DefaultRootWindow(r.display), 0, 0, 1, 1, 0, 0, 0)
+    {.gcsafe.}:
+      r.window = XCreateSimpleWindow(r.display, DefaultRootWindow(r.display), 0, 0, 1, 1, 0, 0, 0)
     r.utf8Atom = XInternAtom(r.display, "UTF8_STRING", 0)
     r.clipboardAtom = XInternAtom(r.display, "CLIPBOARD", 0)
     r.myPropertyName = XInternAtom(r.display, "nimclip", 0)
@@ -221,7 +222,7 @@ proc newX11Clipboard(): X11Clipboard =
 
   r
 
-var gClipboard: Clipboard
+var gClipboard {.threadvar.}: Clipboard
 
 proc clipboardWithName*(name: string): Clipboard =
   if gClipboard.isNil:

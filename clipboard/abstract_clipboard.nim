@@ -24,7 +24,7 @@ const
   CboardFind* = "__CboardFind"
   CboardDrag* = "__CboardDrag"
 
-var typeConverter: TypeConverter
+var typeConverter {.threadvar.}: TypeConverter
 
 proc registerTypeConversion*(typePairs: openarray[tuple[fromType, toType: string]], convert: proc(fromType, toType: string, data: seq[byte]): seq[byte] {.nimcall, gcsafe.}) =
   typeConverter.registerTypeConversion(typePairs, convert)
