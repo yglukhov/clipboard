@@ -114,8 +114,10 @@ proc bestFormat(origFormat: string, availableFormats: HashSet[string]): string =
 proc pbRead(pb: Clipboard, dataType: string, output: var seq[byte]): bool {.gcsafe.} =
   let pb = MacClipboard(pb)
   let pi = pb.getFirstItem()
+  var availableFormats: HashSet[string]
   if not pi.isNil:
-    let requestDataType = bestFormat(dataType, pi.getAvailableformats())
+    pi.getAvailableformats(availableFormats)
+    let requestDataType = bestFormat(dataType, availableFormats)
     if requestDataType.len != 0:
       let d = pi.dataForType(toUti(requestDataType).toNSString)
       if not d.isNil:
