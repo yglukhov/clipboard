@@ -41,7 +41,7 @@ proc getXAvailableFormats(pb: X11Clipboard, o: var HashSet[string]) =
   let display = pb.display
   let r = XConvertSelection(display, pb.clipboardAtom, pb.targetsAtom, pb.myPropertyName, pb.window, CurrentTime)
 
-  var selType: TAtom
+  var selType: Atom
   var selFormat: cint
   var nitems: culong = 0
   var overflow: culong = 0
@@ -97,7 +97,7 @@ proc pbRead(pb: Clipboard, dataType: string, output: var seq[byte]): bool {.gcsa
   let format = XInternAtom(display, requestDataType, 0)
   let r = XConvertSelection(display, pb.clipboardAtom, format, pb.myPropertyName, pb.window, CurrentTime)
 
-  var selType: TAtom
+  var selType: Atom
   var selFormat: cint
   var nitems: culong = 0
   var overflow: culong = 0
