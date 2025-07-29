@@ -3,12 +3,19 @@ import abstract_clipboard
 
 import darwin/app_kit
 
-type MacClipboard = ref object of Clipboard
-  p: NSPasteboard
+type
+  MacClipboardObj = object of Clipboard
+    p: NSPasteboard
+  MacClipboard = ref MacClipboardObj
 
 const NonUtiPrefix = "nim-clip."
 
-proc finalizePboard(p: MacClipboard) = p.p.release()
+when defined(gcDestructors):
+  proc `=destroy`(p: var MacClipboardObj) =
+    p.p.release()
+    p.p = nil
+else:
+  proc finalizePboard(p: MacClipboard) = p.p.release()
 
 proc nativePboardName(n: string): NSString =
   case n
@@ -133,7 +140,10 @@ proc pbAvailableFormats(pb: Clipboard, o: var HashSet[string]) =
 
 proc clipboardWithName*(name: string): Clipboard =
   var res: MacClipboard
-  res.new(finalizePboard)
+  when defined(gcDestructors):
+    res.new()
+  else:
+    res.new(finalizePboard)
   res.p = NSPasteboard.withName(nativePboardName(name)).retain()
   res.writeImpl = pbWrite
   res.readImpl = pbRead
