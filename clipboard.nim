@@ -9,7 +9,7 @@ elif defined(windows):
   import clipboard/clipboard_win
   export clipboard_win
 
-elif defined(js) or defined(emscripten):
+elif defined(js) or defined(emscripten) or defined(wasm):
   import clipboard/clipboard_web
   export clipboard_web
 
