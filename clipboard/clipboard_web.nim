@@ -16,24 +16,26 @@ proc pbAvailableFormats(pb: Clipboard, o: var HashSet[string]) =
   let pb = WebClipboard(pb)
   # TODO: Implement me
 
-proc newBlobAux(typ: cstring, data: pointer, sz: uint32): JSObj {.importwasmexpr: """
-  new Blob([new Uint8Array(_nima, $1, $2)], {type: _nimsj($0)})
+proc uint8MemSlice(s: pointer, length: uint32): JSObject {.importwasmexpr: "new Uint8Array(_nima, $0, $1)".}
+
+proc newBlobAux(typ: string, data: JSObject): JSObject {.importwasmexpr: """
+  new Blob([$1], {type: $0})
   """.}
 
-proc newBlob(typ: cstring, data: openarray[byte]): JSObj {.inline.} =
-  newBlobAux(typ, addr data, data.len.uint32)
+proc newBlob(typ: string, data: openarray[byte]): JSObject {.inline.} =
+  newBlobAux(typ, uint8MemSlice(addr data, data.len.uint32))
 
-proc emptyJSObject(): JSObj {.importwasmp: "{}".}
+proc emptyJSObject(): JSObject {.importwasmp: "{}".}
 
-proc setProp(n: JSObj, kIsStr: bool, k: pointer, vType: uint8, v: pointer) {.importwasmexpr: """
-_nimo[$0][$1?_nimsj($2):$2] = $3&1?_nimsj($4):$3&3?!!$4:$3&4?_nimo[$4]:$4
+proc setProp(n: JSObject, strKey: string, intKey: int32, vType: uint8, objVal: JSObject, iVal: int32) {.importwasmexpr: """
+$0[$1||$2] = $3?$4:$5
 """.}
 
-proc setProperty(n: JSObj, k: cstring, v: JSObj) {.inline.} =
-  setProp(n, true, cast[pointer](k), 4, v.o)
+proc setProperty(n: JSObject, k: string, v: JSObject) {.inline.} =
+  setProp(n, k, 0, 1, v, 0)
 
-proc writeBlobs(blbs: JSObj) {.importwasmraw: """
-  navigator.clipboard.write([new ClipboardItem(_nimo[$0])])
+proc writeBlobs(blbs: JSObject) {.importwasmraw: """
+  navigator.clipboard.write([new ClipboardItem($0)])
     .catch(console.error)
   """.}
 
