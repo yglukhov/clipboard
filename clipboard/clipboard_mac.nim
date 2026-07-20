@@ -69,11 +69,11 @@ proc fromUti(s: string): string =
 proc setDataForType(pi: NSPasteboardItem, data: seq[byte], dataType: string) =
   let utiDataType = toUti(dataType)
   let nsdata = NSData.withBytes(data)
-  discard pi.setDataForType(nsdata, utiDataType.toNSString())
+  discard pi.setData(nsdata, utiDataType.toNSString())
 
 proc pbWrite(pb: Clipboard, dataType: string, data: seq[byte]) {.gcsafe.} =
   let pb = MacClipboard(pb)
-  pb.p.clearContents()
+  discard pb.p.clearContents()
   let npi = NSPasteboardItem.alloc().init()
   npi.setDataForType(data, dataType)
   var buf: seq[byte]
@@ -81,7 +81,7 @@ proc pbWrite(pb: Clipboard, dataType: string, data: seq[byte]) {.gcsafe.} =
     buf.setLen(0)
     if convertData(dataType, f, data, buf):
       npi.setDataForType(buf, f)
-  pb.p.writeObjects(arrayWithObjects(npi))
+  discard pb.p.writeObjects(arrayWithObjects(npi))
   npi.release()
 
 proc getAvailableFormats(pi: NSPasteboardItem, o: var HashSet[string]) {.inline.} =
@@ -144,7 +144,7 @@ proc clipboardWithName*(name: string): Clipboard =
     res.new()
   else:
     res.new(finalizePboard)
-  res.p = NSPasteboard.withName(nativePboardName(name)).retain()
+  res.p = NSPasteboard.pasteboardWithName(nativePboardName(name)).retain()
   res.writeImpl = pbWrite
   res.readImpl = pbRead
   res.availableFormatsImpl = pbAvailableFormats
